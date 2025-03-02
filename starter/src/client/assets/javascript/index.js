@@ -1,5 +1,3 @@
-// PROVIDED CODE BELOW (LINES 1 - 80) DO NOT REMOVE
-
 // The store will hold all information needed globally
 let store = {
   track_id: undefined,
@@ -81,11 +79,6 @@ async function delay(ms) {
   }
 }
 
-// ^ PROVIDED CODE ^ DO NOT REMOVE
-
-// BELOW THIS LINE IS CODE WHERE STUDENT EDITS ARE NEEDED ----------------------------
-// TIP: Do a full file search for TODO to find everything that needs to be done for the game to work
-
 // This async function controls the flow of the race, add the logic and error handling
 async function handleCreateRace() {
   console.log("in create race");
@@ -93,63 +86,58 @@ async function handleCreateRace() {
   // render starting UI
   renderAt("#race", renderRaceStartView(store.track_name));
 
-  // DONE - Get player_id and track_id from the store
   let [player_id, track_id] = [store.player_id, store.track_id];
 
-  // DONE - Call the asynchronous method createRace, passing the correct parameters
   const race = await createRace(player_id, track_id);
 
-  // DONE - update the store with the race id in the response
   console.log("RACE: ", race);
   store.race_id = race.ID;
 
-  // DONE - call the async function runCountdown
   await runCountdown();
 
-  // DONE - call the async function startRace
-  startRace(store.race_id);
+  await startRace(store.race_id);
 
-  // DONE - call the async function runRace
-  runRace(store.race_id);
+  await runRace(store.race_id);
 }
 
-function runRace(raceID) {
-  return new Promise((resolve) => {
-    // TODO - use Javascript's built in setInterval method to get race info (getRace function) every 500ms
+async function runRace(raceID) {
+  try {
+    return await new Promise((resolve) => {
+      let raceInterval = setInterval(async () => {
+        const race = await getRace(raceID);
+        const status = race.Results.status;
 
-    let raceInterval = setInterval(async () => {
-		const race = await getRace(raceID)
-		const status = race.Results.status
-
-		if (status === 'in-progress') {
-			renderAt('#leaderBoard', raceProgress(res.positions))
-		} else if (status === 'finished') {
-			clearInterval(raceInterval) // to stop the interval from repeating
-			renderAt('#race', resultsView(res.positions)) // to render the results view
-			resolve(race) // resolve the promise
-		}
-	}, 500);
-  }).catch(err => {
-	console.error(`Error in runRace: ${err}`);
-  });
+        if (status === "in-progress") {
+          renderAt("#leaderBoard", raceProgress(res.positions));
+        } else if (status === "finished") {
+          clearInterval(raceInterval); // To stop the interval from repeating
+          renderAt("#race", resultsView(res.positions)); // To render the results view
+          resolve(race); // Resolve the promise
+        }
+      }, 500);
+    });
+  } catch (err) {
+    return console.error(`Error while running race: ${err}`);
+  }
 }
 
 async function runCountdown() {
   try {
-    // wait for the DOM to load
+    // Wait for the DOM to load
     await delay(1000);
     let timer = 3;
 
     return new Promise((resolve) => {
-      // TODO - use Javascript's built in setInterval method to count down once per second
-
-      // run this DOM manipulation inside the set interval to decrement the countdown for the user
-      document.getElementById("big-numbers").innerHTML = --timer;
-
-      // TODO - when the setInterval timer hits 0, clear the interval, resolve the promise, and return
+      const countdownInterval = setInterval(() => {
+        document.getElementById("big-numbers").innerHTML = --timer;
+        if (timer <= 0) {
+          clearInterval(countdownInterval);
+          resolve();
+        }
+      }, 1000);
     });
-  } catch (error) {
-    console.log(error);
+  } catch (err) {
+    console.log(`Error while running countdown: ${err}`);
   }
 }
 
@@ -180,12 +168,11 @@ function handleSelectTrack(target) {
 }
 
 function handleAccelerate() {
-  console.log("accelerate button clicked");
-  // TODO - Invoke the API call to accelerate
+  console.log("Accelerate button clicked");
+  accelerate(store.race_id);
 }
 
-// HTML VIEWS ------------------------------------------------
-// Provided code - do not remove
+// HTML views
 
 function renderRacerCars(racers) {
   if (!racers.length) {
@@ -205,8 +192,6 @@ function renderRacerCars(racers) {
 
 function renderRacerCard(racer) {
   const { id, driver_name, top_speed, acceleration, handling } = racer;
-  // OPTIONAL: There is more data given about the race cars than we use in the game, if you want to factor in top speed, acceleration,
-  // and handling to the various vehicles, it is already provided by the API!
   return `<h4 class="card racer" id="${id}">${driver_name}</h3>`;
 }
 
@@ -316,9 +301,7 @@ function renderAt(element, html) {
   node.innerHTML = html;
 }
 
-// ^ Provided code ^ do not remove
-
-// API CALLS ------------------------------------------------
+// API calls
 
 const SERVER = "http://localhost:3001";
 
@@ -332,35 +315,26 @@ function defaultFetchOpts() {
   };
 }
 
-// TODO - Make a fetch call (with error handling!) to each of the following API endpoints
-
 async function getTracks() {
-  console.log(`calling server :: ${SERVER}/api/tracks`);
+  console.log(`Calling server: ${SERVER}/api/tracks`);
+
   // GET request to `${SERVER}/api/tracks`
 
-  // TODO: Fetch tracks
   const res = await fetch(`${SERVER}/api/tracks`, {
-    method: "GET",
-  }).catch((err) => {
-    console.error(err);
-  });
+    ...defaultFetchOpts(),
+  }).catch((err) => console.error(`Error while getting tracks: ${err}`));
 
   return await res.json();
-  // TIP: Don't forget a catch statement!
 }
 
 async function getRacers() {
   // GET request to `${SERVER}/api/cars`
 
-  // TODO: Fetch racers
   const res = await fetch(`${SERVER}/api/cars`, {
     method: "GET",
-  }).catch((err) => {
-    console.error(err);
-  });
+  }).catch((err) => console.error(`Error while getting racers: ${err}`));
 
   return await res.json();
-  // TIP: Do a file search for "TODO" to make sure you find all the things you need to do! There are even some vscode plugins that will highlight todos for you
 }
 
 async function createRace(player_id, track_id) {
@@ -368,41 +342,40 @@ async function createRace(player_id, track_id) {
   track_id = parseInt(track_id);
   const body = { player_id, track_id };
 
-  try {
-    const res = await fetch(`${SERVER}/api/races`, {
-      method: "POST",
-      ...defaultFetchOpts(),
-      dataType: "jsonp",
-      body: JSON.stringify(body),
-    });
-    return await res.json();
-  } catch (err) {
-    return console.log("Problem with createRace request::", err);
-  }
+  const res = await fetch(`${SERVER}/api/races`, {
+    method: "POST",
+    ...defaultFetchOpts(),
+    dataType: "jsonp",
+    body: JSON.stringify(body),
+  }).catch((err) => console.log("Error while creating race: ", err));
+
+  return res.json();
 }
 
 async function getRace(id) {
   // GET request to `${SERVER}/api/races/${id}`
 
-  const res = await fetch(`${SERVER}/api/races/${id}`);
+  const res = await fetch(`${SERVER}/api/races/${id}`, {
+    ...defaultFetchOpts(),
+  }).catch((err) => console.error(`Error while getting race: ${err}`));
 
   return await res.json();
 }
 
 async function startRace(id) {
-  try {
-    const res = await fetch(`${SERVER}/api/races/${id}/start`, {
-      method: "POST",
-      ...defaultFetchOpts(),
-    });
-    return await res.json();
-  } catch (err) {
-    return console.log("Problem with getRace request::", err);
-  }
+  // POST request to `${SERVER}/api/races/${id}/start`
+
+  const res = await fetch(`${SERVER}/api/races/${id}/start`, {
+    method: "POST",
+    ...defaultFetchOpts(),
+  }).catch((err) => console.error(`Error while starting race: ${err}`));
 }
 
-function accelerate(id) {
+async function accelerate(id) {
   // POST request to `${SERVER}/api/races/${id}/accelerate`
-  // options parameter provided as defaultFetchOpts
-  // no body or datatype needed for this request
+
+  const res = await fetch(`${SERVER}/api/races/${id}/accelerate`, {
+    method: "POST",
+    ...defaultFetchOpts(),
+  }).catch((err) => console.error(`Error while accelerating: ${err}`));
 }
