@@ -26,7 +26,7 @@ async function onPageLoad() {
       renderAt("#racers", html);
     });
   } catch (error) {
-    console.log("Problem getting tracks and racers ::", error.message);
+    console.log("Problem getting tracks and racers: ", error.message);
     console.error(error);
   }
 }
@@ -104,15 +104,16 @@ async function runRace(raceID) {
   try {
     return await new Promise((resolve) => {
       let raceInterval = setInterval(async () => {
-        const race = await getRace(raceID);
-        const status = race.Results.status;
+        const results = await getRace(raceID);
+        console.log(`Results: ${results.status}`)
+        const status = results.status;
 
         if (status === "in-progress") {
-          renderAt("#leaderBoard", raceProgress(res.positions));
+          renderAt("#leaderBoard", raceProgress(results.positions));
         } else if (status === "finished") {
           clearInterval(raceInterval); // To stop the interval from repeating
-          renderAt("#race", resultsView(res.positions)); // To render the results view
-          resolve(race); // Resolve the promise
+          renderAt("#race", resultsView(results.positions)); // To render the results view
+          resolve(results); // Resolve the promise
         }
       }, 500);
     });
@@ -224,10 +225,10 @@ function renderCountdown(count) {
 	`;
 }
 
-function renderRaceStartView(track) {
+function renderRaceStartView(track_name) {
   return `
 		<header>
-			<h1>Race: ${track.name}</h1>
+			<h1>Race: ${track_name}</h1>
 		</header>
 		<main id="two-columns">
 			<section id="leaderBoard">
@@ -245,6 +246,7 @@ function renderRaceStartView(track) {
 }
 
 function resultsView(positions) {
+  let userPlayer = positions.find((e) => e.id === parseInt(store.player_id));
   userPlayer.driver_name += " (you)";
   let count = 1;
 
@@ -362,19 +364,19 @@ async function getRace(id) {
   return await res.json();
 }
 
-async function startRace(id) {
+function startRace(id) {
   // POST request to `${SERVER}/api/races/${id}/start`
 
-  const res = await fetch(`${SERVER}/api/races/${id}/start`, {
+  fetch(`${SERVER}/api/races/${id}/start`, {
     method: "POST",
     ...defaultFetchOpts(),
   }).catch((err) => console.error(`Error while starting race: ${err}`));
 }
 
-async function accelerate(id) {
+function accelerate(id) {
   // POST request to `${SERVER}/api/races/${id}/accelerate`
 
-  const res = await fetch(`${SERVER}/api/races/${id}/accelerate`, {
+  fetch(`${SERVER}/api/races/${id}/accelerate`, {
     method: "POST",
     ...defaultFetchOpts(),
   }).catch((err) => console.error(`Error while accelerating: ${err}`));

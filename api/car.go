@@ -5,7 +5,7 @@ const MaxTopSpeed = 200
 
 // MaxAcceleration represents how quickly a car reaches it's top speed.
 // because the service updates it's state 60 times/second this is represented
-// as an integer where each frame of the race increments the current speed by
+// as an integer where each frame of hte race increments the current speed by
 // this ammount.
 //
 // Deceleration is the same for all cars.
